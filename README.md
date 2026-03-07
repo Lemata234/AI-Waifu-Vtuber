@@ -1,3 +1,8 @@
+DRIVE DEL ARCHIVO DEL MODEL.PT: https://drive.google.com/drive/folders/1uQ8XTQyBSxrwD7qRdGUeUIxTDaBD4Sfe?usp=sharing
+
+
+
+
 # Support
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/R6R7AH1FA)
@@ -164,4 +169,5 @@ params_encoded = urllib.parse.urlencode({'text': tts, 'speaker': 46})
 ## Credits
 
 This project is inspired by the work of shioridotdev. Special thanks to the creators of the technologies used in this project including VoiceVox Engine, DeepL, Whisper OpenAI, and VtubeStudio.
+
 
