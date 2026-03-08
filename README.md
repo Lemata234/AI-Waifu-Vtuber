@@ -8,6 +8,8 @@ Este es el modelo que ya viene con el contexto e información acerca de la empre
 cambios a realizar: debemos hallar la manera de implementar input por voz y texto de varios idiomas, y necesitamos que la IA (mombii) sea capaz de responder
 en el idioma en el que se le habla. 
 
+Actualización: todo eso se logró, solo faltan los subtitulos
+
 
 # Support
 
@@ -175,6 +177,7 @@ params_encoded = urllib.parse.urlencode({'text': tts, 'speaker': 46})
 ## Credits
 
 This project is inspired by the work of shioridotdev. Special thanks to the creators of the technologies used in this project including VoiceVox Engine, DeepL, Whisper OpenAI, and VtubeStudio.
+
 
 
 
