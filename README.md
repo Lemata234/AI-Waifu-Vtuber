@@ -1,6 +1,7 @@
 DRIVE DEL ARCHIVO DEL MODEL.PT: https://drive.google.com/drive/folders/1uQ8XTQyBSxrwD7qRdGUeUIxTDaBD4Sfe?usp=sharing
 
-
+Actualización: esta versión es la que funciona con la integración de Ollama local, tienes ver en rnu.py que versión de ia es la que se ejecuta
+y así decidir cual usar. 
 
 
 # Support
@@ -169,5 +170,6 @@ params_encoded = urllib.parse.urlencode({'text': tts, 'speaker': 46})
 ## Credits
 
 This project is inspired by the work of shioridotdev. Special thanks to the creators of the technologies used in this project including VoiceVox Engine, DeepL, Whisper OpenAI, and VtubeStudio.
+
 
 
