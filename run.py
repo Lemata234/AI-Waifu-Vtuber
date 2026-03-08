@@ -66,8 +66,8 @@ def record_audio():
                     frames_per_buffer=CHUNK)
 
     frames = []
-    print("🎤 Grabando... (mantén RIGHT SHIFT)")
-    while keyboard.is_pressed('RIGHT_SHIFT'):
+    print("🎤 Grabando... (mantén M)")
+    while keyboard.is_pressed('M'):
         data = stream.read(CHUNK)
         frames.append(data)
 
@@ -101,7 +101,7 @@ def transcribe_audio(file):
 
         # NUEVO: Usar detección automática de idioma de Google Speech
         try:
-            chat_now = recognizer.recognize_google(audio, language=None)  # None = detección automática
+            chat_now = recognizer.recognize_google(audio)  # sin language, usa auto-detect.  # None = detección automática
             print(f"🗣️ Tú: {chat_now}")
         except sr.UnknownValueError:
             print("❌ No se pudo entender el audio")
@@ -228,39 +228,67 @@ def yt_livechat(video_id):
 # FUNCIÓN: Capturar chat de Twitch (con detección de idioma)
 # ============================================
 def twitch_livechat():
-    global chat, current_language  # NUEVO
+    global chat, current_language
     sock = socket.socket()
     sock.connect((server, port))
+
+    # Enviar autenticación
     sock.send(f"PASS {token}\n".encode('utf-8'))
     sock.send(f"NICK {nickname}\n".encode('utf-8'))
     sock.send(f"JOIN {channel}\n".encode('utf-8'))
+
+    # Pequeña espera para que el servidor procese
+    time.sleep(1)
 
     regex = r":(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG #\w+ :(.+)"
 
     while True:
         try:
-            resp = sock.recv(2048).decode('utf-8')
+            resp = sock.recv(2048).decode('utf-8', errors='ignore')
+
+            # Mostrar todo lo que llega (para depuración)
+            print(f"[DEBUG RAW] {repr(resp)}")
+
+            # Responder a PING para mantener la conexión viva
             if resp.startswith('PING'):
                 sock.send("PONG\n".encode('utf-8'))
-            elif not user in resp:
+                continue
+
+            # Procesar solo líneas que contengan PRIVMSG
+            if 'PRIVMSG' in resp:
+                # Limpiar y procesar
                 resp = demojize(resp)
                 match = re.match(regex, resp)
-                username = match.group(1)
-                message = match.group(2)
-                if username in blacklist:
-                    continue
 
-                # NUEVO: Detectar idioma del mensaje
-                from utils.translate import detect_google
-                idioma_msg = detect_google(message)
-                current_language = idioma_msg
-                print(f"🌐 Idioma del chat: {idioma_msg}")
+                if match:
+                    username = match.group(1)
+                    message = match.group(2)
 
-                chat = username + ' dijo: ' + message
-                print(chat)
+                    # Opcional: ignorar mensajes del propio bot para no crear un loop
+                    # if username.lower() == nickname.lower():
+                    #    continue
+
+                    if username in blacklist:
+                        continue
+
+                    # Detectar idioma
+                    from utils.translate import detect_google
+                    idioma_msg = detect_google(message)
+                    current_language = idioma_msg
+                    print(f"🌐 Idioma del chat: {idioma_msg}")
+
+                    # Asignar a la variable global chat para que el hilo preparation lo tome
+                    chat = username + ' dijo: ' + message
+                    print(chat)
+                else:
+                    print(f"⚠️ Línea PRIVMSG no coincide con regex: {resp.strip()}")
+            else:
+                # Líneas de bienvenida o de otro tipo, solo ignorar
+                pass
+
         except Exception as e:
             print(f"Error en chat de Twitch: {e}")
-
+            time.sleep(1)  # Evitar saturar en caso de error continuo
 # ============================================
 # FUNCIÓN: Preparación (hilo principal)
 # ============================================
@@ -292,10 +320,10 @@ if __name__ == "__main__":
 
         if mode == "1":
             print("\n🎤 Modo MICRÓFONO")
-            print("Mantén presionada la tecla RIGHT SHIFT para hablar")
+            print("Mantén presionada la tecla M para hablar")
             print("Suelta la tecla para que MOMBII procese tu mensaje\n")
             while True:
-                if keyboard.is_pressed('RIGHT_SHIFT'):
+                if keyboard.is_pressed('M'):
                     record_audio()
 
         elif mode == "2":
