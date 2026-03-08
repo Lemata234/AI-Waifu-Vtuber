@@ -22,3 +22,11 @@ def generate_subtitle(chat_now, result_id):
         except:
             print("Error writing to chat.txt")
 
+def clear_subtitles():
+    """Limpia los archivos de subtítulos"""
+    try:
+        for archivo in ["chat.txt", "output.txt"]:
+            with open(archivo, "w", encoding="utf-8") as f:
+                f.truncate(0)
+    except:
+        pass
