@@ -164,7 +164,7 @@ def translate_text(text):
     global is_Speaking, chat_now
 
     # Mostrar respuesta
-    print(f"\n🤖 Ariel: {text}")
+    print(f"\n🤖 Mombii: {text}")
 
     # Generar subtítulo
     generate_subtitle(chat_now, text)
@@ -291,11 +291,11 @@ def preparation():
 if __name__ == "__main__":
     try:
         print("=" * 50)
-        print("   ASISTENTE ARIEL - MODO ESPAÑOL")
+        print("   ASISTENTE MOMBII - MODO ESPAÑOL")
         print("   Con soporte para VB-Audio Virtual Cable")
         print("=" * 50)
         print("Modos disponibles:")
-        print("1 - Micrófono (habla con Ariel)")
+        print("1 - Micrófono (habla con MOMBII)")
         print("2 - YouTube Live")
         print("3 - Twitch Live")
 
@@ -304,7 +304,7 @@ if __name__ == "__main__":
         if mode == "1":
             print("\n🎤 Modo MICRÓFONO")
             print("Mantén presionada la tecla RIGHT SHIFT para hablar")
-            print("Suelta la tecla para que Ariel procese tu mensaje\n")
+            print("Suelta la tecla para que MOMBII procese tu mensaje\n")
             while True:
                 if keyboard.is_pressed('RIGHT_SHIFT'):
                     record_audio()
