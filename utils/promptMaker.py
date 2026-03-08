@@ -1,53 +1,51 @@
 import json
-import sys
+import os
 
-sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
+def get_identity():
+    """Lee la identidad del personaje desde el archivo"""
+    identity_file = "characterConfig/Pina/identity.txt"
+    try:
+        if os.path.exists(identity_file):
+            with open(identity_file, "r", encoding="utf-8") as f:
+                return f.read().strip()
+        else:
+            # Identidad por defecto
+            return """Eres Mombii, un asistente virtual amable y servicial.
+                    Respondes SIEMPRE en el idioma en el que se te habla de forma clara y profesional.
+                    Tu objetivo es ayudar con problemas de tecnología."""
+    except Exception as e:
+        print(f"Error leyendo identity.txt: {e}")
+        return "Eres un asistente virtual que responde en varios idiomas."
 
-outputNum = 20
-
-def getIdentity(identityPath):  
-    with open(identityPath, "r", encoding="utf-8") as f:
-        identityContext = f.read()
-    return {"role": "user", "content": identityContext}
-    
 def getPrompt():
-    total_len = 0
-    prompt = []
-    prompt.append(getIdentity("characterConfig/Pina/identity.txt"))
-    prompt.append({"role": "system", "content": f"Below is conversation history.\n"})
+    """Construye el prompt completo para el modelo"""
 
-    with open("conversation.json", "r") as f:
-        data = json.load(f)
-    history = data["history"]
-    for message in history[:-1]:
-        prompt.append(message)
+    # Cargar identidad
+    identity = get_identity()
 
-    prompt.append(
-        {
-            "role": "system",
-            "content": f"Here is the latest conversation.\n*Make sure your response is within {outputNum} characters!\n",
-        }
+    # Cargar historial (si existe)
+    conversation = []
+    try:
+        if os.path.exists("conversation.json"):
+            with open("conversation.json", "r", encoding="utf-8") as f:
+                history = json.load(f)
+                conversation = history.get("history", [])
+    except:
+        pass
+
+    # Crear mensajes
+    messages = []
+
+    # System prompt con la identidad y refuerzo de idioma
+    system_content = (
+        f"{identity}\n\n"
+        "IMPORTANTE: Debes responder SIEMPRE en el idioma en el que se te habla. "
+        "Mantén un tono profesional pero amable. "
+        "Si no sabes algo, admítelo y ofrece ayuda alternativa."
     )
+    messages.append({"role": "system", "content": system_content})
 
-    prompt.append(history[-1])
+    # Agregar historial reciente (últimos 10 mensajes)
+    messages.extend(conversation[-10:])
 
-    total_len = sum(len(d['content']) for d in prompt)
-    
-    while total_len > 4000:
-        try:
-            # print(total_len)
-            # print(len(prompt))
-            prompt.pop(2)
-            total_len = sum(len(d['content']) for d in prompt)
-        except:
-            print("Error: Prompt too long!")
-
-    # total_characters = sum(len(d['content']) for d in prompt)
-    # print(f"Total characters: {total_characters}")
-
-    return prompt
-
-if __name__ == "__main__":
-    prompt = getPrompt()
-    print(prompt)
-    print(len(prompt))
+    return messages
