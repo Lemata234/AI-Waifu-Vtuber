@@ -18,7 +18,6 @@ from utils.subtitle import *
 from utils.promptMaker import *
 from utils.twitch_config import *
 
-
 # ESTE ES EL LINK DE DRIVE PARA EL ARCHIVO MODEL.PT QUE PESA 54 MB:
 # https://drive.google.com/drive/folders/1uQ8XTQyBSxrwD7qRdGUeUIxTDaBD4Sfe?hl=es
 
@@ -44,8 +43,10 @@ blacklist = ["Nightbot", "streamelements"]
 OLLAMA_MODEL = "gemma3:4b"
 
 # Nombre del dispositivo de cable virtual (VB-Audio Virtual Cable)
-# En VB-Audio, el dispositivo de salida se llama "CABLE Input"
 CABLE_DEVICE_NAME = "CABLE Input"
+
+# NUEVO: Variable global para almacenar el último idioma detectado
+current_language = "es"
 
 # ============================================
 # FUNCIÓN: Grabar audio desde micrófono
@@ -85,10 +86,11 @@ def record_audio():
     transcribe_audio("input.wav")
 
 # ============================================
-# FUNCIÓN: Transcribir audio a texto (español)
+# FUNCIÓN: Transcribir audio a texto (detección automática de idioma)
 # ============================================
 def transcribe_audio(file):
-    global chat_now
+    global chat_now, current_language  # NUEVO
+
     try:
         import speech_recognition as sr
         recognizer = sr.Recognizer()
@@ -97,9 +99,9 @@ def transcribe_audio(file):
             recognizer.adjust_for_ambient_noise(source, duration=0.5)
             audio = recognizer.record(source)
 
-        # Reconocimiento en español
+        # NUEVO: Usar detección automática de idioma de Google Speech
         try:
-            chat_now = recognizer.recognize_google(audio, language="es-ES")
+            chat_now = recognizer.recognize_google(audio, language=None)  # None = detección automática
             print(f"🗣️ Tú: {chat_now}")
         except sr.UnknownValueError:
             print("❌ No se pudo entender el audio")
@@ -107,6 +109,11 @@ def transcribe_audio(file):
         except sr.RequestError:
             print("❌ Error con el servicio de reconocimiento")
             return
+
+        # NUEVO: Detectar el idioma del texto transcrito
+        from utils.translate import detect_google
+        current_language = detect_google(chat_now)
+        print(f"🌐 Idioma detectado: {current_language}")
 
     except Exception as e:
         print(f"❌ Error transcribiendo audio: {e}")
@@ -135,8 +142,8 @@ def ollama_answer():
     with open("conversation.json", "w", encoding="utf-8") as f:
         json.dump(history, f, indent=4)
 
-    # Obtener prompt con la personalidad
-    prompt = getPrompt()
+    # NUEVO: Obtener prompt pasando el idioma actual
+    prompt = getPrompt(current_language)
 
     # Llamar a Ollama
     try:
@@ -158,57 +165,25 @@ def ollama_answer():
     translate_text(message)
 
 # ============================================
-# FUNCIÓN: Generar voz y enviar a cable virtual
+# FUNCIÓN: Generar voz y enviar a cable virtual (multilingüe)
 # ============================================
 def translate_text(text):
-    global is_Speaking, chat_now
+    global is_Speaking, chat_now, current_language  # NUEVO: usar current_language
 
     # Mostrar respuesta
-    print(f"\n🤖 Mombii: {text}")
+    print(f"\n🤖 Mombii ({current_language}): {text}")
 
     # Generar subtítulo
     generate_subtitle(chat_now, text)
 
-    # Generar voz con pyttsx3 (español)
     is_Speaking = True
 
+    # NUEVO: Usar función multilingüe de TTS
     try:
-        import pyttsx3
-        engine = pyttsx3.init()
-        engine.setProperty('rate', 160)
-        engine.setProperty('volume', 0.9)
-
-        # Buscar voz en español
-        voices = engine.getProperty('voices')
-        voz_es = None
-        for voice in voices:
-            if 'spanish' in voice.name.lower() or 'español' in voice.name.lower():
-                voz_es = voice.id
-                print(f"✅ Voz encontrada: {voice.name}")
-                break
-
-        if voz_es:
-            engine.setProperty('voice', voz_es)
-        else:
-            print("⚠️ No se encontró voz en español, usando voz por defecto")
-
-        # Guardar el audio en un archivo
-        engine.save_to_file(text, 'test.wav')
-        engine.runAndWait()
-
-        # Reproducir en el cable virtual (para VTube Studio)
-        try:
-            from utils.TTS import reproducir_en_cable
-            print(f"🔊 Enviando audio a {CABLE_DEVICE_NAME}...")
-            reproducir_en_cable("test.wav", CABLE_DEVICE_NAME)
-        except Exception as e:
-            print(f"⚠️ Error con cable virtual: {e}")
-            print("🔊 Reproduciendo por altavoz normal...")
-            winsound.PlaySound("test.wav", winsound.SND_FILENAME)
-
+        from utils.TTS import hablar_en_idioma
+        hablar_en_idioma(text, current_language, CABLE_DEVICE_NAME)
     except Exception as e:
         print(f"❌ Error generando voz: {e}")
-        # Fallback: Beep de emergencia
         winsound.Beep(500, 500)
 
     is_Speaking = False
@@ -223,10 +198,10 @@ def translate_text(text):
             pass
 
 # ============================================
-# FUNCIÓN: Capturar chat de YouTube
+# FUNCIÓN: Capturar chat de YouTube (con detección de idioma)
 # ============================================
 def yt_livechat(video_id):
-    global chat
+    global chat, current_language  # NUEVO
     live = pytchat.create(video_id=video_id)
     while live.is_alive():
         try:
@@ -236,6 +211,13 @@ def yt_livechat(video_id):
                 if not c.message.startswith("!"):
                     chat_raw = re.sub(r':[^\s]+:', '', c.message)
                     chat_raw = chat_raw.replace('#', '')
+
+                    # NUEVO: Detectar idioma del mensaje
+                    from utils.translate import detect_google
+                    idioma_msg = detect_google(chat_raw)
+                    current_language = idioma_msg
+                    print(f"🌐 Idioma del chat: {idioma_msg}")
+
                     chat = c.author.name + ' dijo: ' + chat_raw
                     print(chat)
                 time.sleep(1)
@@ -243,10 +225,10 @@ def yt_livechat(video_id):
             print(f"Error en chat de YT: {e}")
 
 # ============================================
-# FUNCIÓN: Capturar chat de Twitch
+# FUNCIÓN: Capturar chat de Twitch (con detección de idioma)
 # ============================================
 def twitch_livechat():
-    global chat
+    global chat, current_language  # NUEVO
     sock = socket.socket()
     sock.connect((server, port))
     sock.send(f"PASS {token}\n".encode('utf-8'))
@@ -267,6 +249,13 @@ def twitch_livechat():
                 message = match.group(2)
                 if username in blacklist:
                     continue
+
+                # NUEVO: Detectar idioma del mensaje
+                from utils.translate import detect_google
+                idioma_msg = detect_google(message)
+                current_language = idioma_msg
+                print(f"🌐 Idioma del chat: {idioma_msg}")
+
                 chat = username + ' dijo: ' + message
                 print(chat)
         except Exception as e:
@@ -291,8 +280,8 @@ def preparation():
 if __name__ == "__main__":
     try:
         print("=" * 50)
-        print("   ASISTENTE MOMBII - MODO ESPAÑOL")
-        print("   Con soporte para VB-Audio Virtual Cable")
+        print("   ASISTENTE MOMBII - MODO MULTILINGÜE")
+        print("   Responde en el mismo idioma en que le hablen")
         print("=" * 50)
         print("Modos disponibles:")
         print("1 - Micrófono (habla con MOMBII)")
