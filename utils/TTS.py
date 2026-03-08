@@ -4,6 +4,7 @@ import requests
 import urllib.parse
 import sounddevice as sd
 import soundfile as sf
+import numpy as np
 from utils.katakana import *
 
 def silero_tts(tts, language, model, speaker, output_file="test.wav"):
@@ -38,6 +39,11 @@ def reproducir_en_cable(archivo_wav, nombre_dispositivo="CABLE Input"):
     # Cargar el audio
     data, samplerate = sf.read(archivo_wav, dtype='float32')
 
+
+
+
+
+
     # Buscar el dispositivo por nombre
     devices = sd.query_devices()
     dispositivo_id = None
@@ -51,6 +57,12 @@ def reproducir_en_cable(archivo_wav, nombre_dispositivo="CABLE Input"):
         print(f"⚠️ No se encontró '{nombre_dispositivo}'. Usando dispositivo predeterminado.")
         dispositivo_id = sd.default.device[1]  # Salida predeterminada
 
+
+
+
+
     # Reproducir
+
+
     sd.play(data, samplerate, device=dispositivo_id)
     sd.wait()  # Esperar a que termine
