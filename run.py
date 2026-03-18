@@ -307,20 +307,29 @@ def chat_texto():
 
     while True:
         try:
+            # Mostrar prompt y leer mensaje
             mensaje = input("Tú: ").strip()
+
             if mensaje.lower() == 'salir':
                 print("\n👋 Saliendo del modo chat...")
                 break
+
             if mensaje:
-                # Detectar idioma
+                # Detectar idioma del mensaje
                 from utils.translate import detect_google
                 current_language = detect_google(mensaje)
-                # Asignar a chat
+
+                # Asignar a la variable global que vigila preparation()
                 chat = "Usuario dijo: " + mensaje
                 print(f"🌐 Idioma detectado: {current_language}")
-                # Esperar a que Mombii termine de hablar
+
+                # --- NUEVO: Esperar a que Mombii termine de hablar ---
+                # Esto evita que el siguiente prompt se muestre antes de la respuesta
                 while is_Speaking:
                     time.sleep(0.1)
+                # También esperar un poco más para asegurar que la respuesta se ha mostrado
+                time.sleep(0.5)
+
         except KeyboardInterrupt:
             print("\n👋 Saliendo del modo chat...")
             break
@@ -365,10 +374,10 @@ if __name__ == "__main__":
 
         if mode == "1":
             print("\n🎤 Modo MICRÓFONO")
-            print("Mantén presionada la tecla RIGHT SHIFT para hablar")
+            print("Mantén presionada la tecla M para hablar")
             print("Suelta la tecla para que MOMBII procese tu mensaje\n")
             while True:
-                if keyboard.is_pressed('RIGHT_SHIFT'):
+                if keyboard.is_pressed('M'):
                     record_audio()
 
         elif mode == "2":
