@@ -17,7 +17,6 @@ def get_identity():
         print(f"Error leyendo identity.txt: {e}")
         return "Eres un asistente virtual que responde en varios idiomas."
 
-# NUEVO: Acepta parámetro language
 def getPrompt(language="es"):
     """Construye el prompt completo para el modelo, forzando el idioma de respuesta."""
 
@@ -37,12 +36,16 @@ def getPrompt(language="es"):
     # Crear mensajes
     messages = []
 
-    # NUEVO: System prompt con instrucción de idioma dinámico
+    # System prompt con instrucción estricta de monolingüismo
     system_content = (
         f"{identity}\n\n"
-        f"IMPORTANTE: Debes responder SIEMPRE en el idioma '{language}'. "
-        "El usuario te habla en ese idioma y tú debes continuar la conversación en el mismo idioma. "
-        "Mantén un tono profesional pero amable. Si no sabes algo, admítelo."
+        f"IMPORTANTE: Debes responder EXCLUSIVAMENTE en el idioma '{language}'. "
+        "No mezcles idiomas en tu respuesta. Si el usuario te habla en ese idioma, tú respondes únicamente en ese idioma, sin incluir frases en otros idiomas.\n"
+        "Ejemplos:\n"
+        "- Si el usuario te habla en japonés, respondes solo en japonés.\n"
+        "- Si el usuario te habla en español, respondes solo en español.\n"
+        "- Si el usuario te habla en alemán, respondes solo en alemán.\n\n"
+        "Mantén un tono profesional pero amable. Si no sabes algo, admítelo. Pero recuerda: tu respuesta debe estar COMPLETAMENTE en el idioma indicado."
     )
     messages.append({"role": "system", "content": system_content})
 
