@@ -307,7 +307,6 @@ def chat_texto():
 
     while True:
         try:
-            # Mostrar prompt y leer mensaje
             mensaje = input("Tú: ").strip()
 
             if mensaje.lower() == 'salir':
@@ -315,19 +314,23 @@ def chat_texto():
                 break
 
             if mensaje:
-                # Detectar idioma del mensaje
                 from utils.translate import detect_google
                 current_language = detect_google(mensaje)
-
-                # Asignar a la variable global que vigila preparation()
                 chat = "Usuario dijo: " + mensaje
                 print(f"🌐 Idioma detectado: {current_language}")
 
-                # --- NUEVO: Esperar a que Mombii termine de hablar ---
-                # Esto evita que el siguiente prompt se muestre antes de la respuesta
+                # Esperar a que Mombii comience a hablar (is_Speaking se pone True)
+                # Timeout de 10 segundos por si acaso
+                timeout = 10
+                while not is_Speaking and timeout > 0:
+                    time.sleep(0.1)
+                    timeout -= 0.1
+
+                # Esperar a que termine de hablar
                 while is_Speaking:
                     time.sleep(0.1)
-                # También esperar un poco más para asegurar que la respuesta se ha mostrado
+
+                # Pequeña pausa extra para que la respuesta se muestre en consola
                 time.sleep(0.5)
 
         except KeyboardInterrupt:
@@ -336,7 +339,6 @@ def chat_texto():
         except Exception as e:
             print(f"❌ Error en chat de texto: {e}")
             time.sleep(1)
-
 
 
 
