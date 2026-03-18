@@ -1,25 +1,28 @@
-import ollama
-import winsound
-import sys
-import pytchat
-import time
-import re
-import pyaudio
-import keyboard
-import wave
-import threading
-import json
 import socket
+import threading
+import wave
+
+import keyboard
+import ollama
+import pyaudio
+import pytchat
+import winsound
 from emoji import demojize
-from config import *
-from utils.translate import *
+
 from utils.TTS import *
-from utils.subtitle import *
 from utils.promptMaker import *
+from utils.subtitle import *
+from utils.translate import *
 from utils.twitch_config import *
 
 # ESTE ES EL LINK DE DRIVE PARA EL ARCHIVO MODEL.PT QUE PESA 54 MB:
 # https://drive.google.com/drive/folders/1uQ8XTQyBSxrwD7qRdGUeUIxTDaBD4Sfe?hl=es
+
+# ANTES DE USAR ESTA VERSIÓN, YA QUE JODIMOS EL ENTORNO VIRTUAL, USA ESTE COMANDO LA PRIMERA VEZ QUE VAYAS
+# A USAR EL POWER SHELL: .\.venv\Scripts\Activate.ps1
+# CON ESE COMANDO SI TE VA A ADMITIR ESCRIBIR PYTHON RUN.PY
+# id de stream yt:
+# id de stream twitch:
 
 # Configurar consola para UTF-8
 sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
@@ -99,9 +102,10 @@ def transcribe_audio(file):
             recognizer.adjust_for_ambient_noise(source, duration=0.5)
             audio = recognizer.record(source)
 
+
         # NUEVO: Usar detección automática de idioma de Google Speech
         try:
-            chat_now = recognizer.recognize_google(audio)  # sin language, usa auto-detect.  # None = detección automática
+            chat_now = recognizer.recognize_google(audio)  # sin parámetro language, usa auto-detect  # sin language, usa auto-detect.  # None = detección automática
             print(f"🗣️ Tú: {chat_now}")
         except sr.UnknownValueError:
             print("❌ No se pudo entender el audio")
@@ -289,6 +293,46 @@ def twitch_livechat():
         except Exception as e:
             print(f"Error en chat de Twitch: {e}")
             time.sleep(1)  # Evitar saturar en caso de error continuo
+
+            # ============================================
+# FUNCIÓN: Chat por texto (modo 4)
+# ============================================
+def chat_texto():
+    global chat, current_language, is_Speaking
+    print("\n" + "="*50)
+    print("   MODO CHAT POR TEXTO")
+    print("   Escribe tu mensaje y presiona ENTER")
+    print("   Escribe 'salir' para volver al menú")
+    print("="*50 + "\n")
+
+    while True:
+        try:
+            mensaje = input("Tú: ").strip()
+            if mensaje.lower() == 'salir':
+                print("\n👋 Saliendo del modo chat...")
+                break
+            if mensaje:
+                # Detectar idioma
+                from utils.translate import detect_google
+                current_language = detect_google(mensaje)
+                # Asignar a chat
+                chat = "Usuario dijo: " + mensaje
+                print(f"🌐 Idioma detectado: {current_language}")
+                # Esperar a que Mombii termine de hablar
+                while is_Speaking:
+                    time.sleep(0.1)
+        except KeyboardInterrupt:
+            print("\n👋 Saliendo del modo chat...")
+            break
+        except Exception as e:
+            print(f"❌ Error en chat de texto: {e}")
+            time.sleep(1)
+
+
+
+
+
+
 # ============================================
 # FUNCIÓN: Preparación (hilo principal)
 # ============================================
@@ -315,15 +359,16 @@ if __name__ == "__main__":
         print("1 - Micrófono (habla con MOMBII)")
         print("2 - YouTube Live")
         print("3 - Twitch Live")
+        print("4 - Chat por texto")  # <--- NUEVA OPCIÓN
 
-        mode = input("Selecciona modo (1, 2 o 3): ")
+        mode = input("Selecciona modo (1, 2, 3 o 4): ")
 
         if mode == "1":
             print("\n🎤 Modo MICRÓFONO")
-            print("Mantén presionada la tecla M para hablar")
+            print("Mantén presionada la tecla RIGHT SHIFT para hablar")
             print("Suelta la tecla para que MOMBII procese tu mensaje\n")
             while True:
-                if keyboard.is_pressed('M'):
+                if keyboard.is_pressed('RIGHT_SHIFT'):
                     record_audio()
 
         elif mode == "2":
@@ -337,6 +382,11 @@ if __name__ == "__main__":
             t = threading.Thread(target=preparation)
             t.start()
             twitch_livechat()
+
+        elif mode == "4":  # <--- NUEVO MODO
+            t = threading.Thread(target=preparation)
+            t.start()
+            chat_texto()
 
     except KeyboardInterrupt:
         print("\n👋 Programa terminado.")
